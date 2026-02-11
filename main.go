@@ -19,7 +19,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&req)
 
 	res := Response{
-		Result: req.A + req.B,
+		Result: Add(req.A, req.B),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
