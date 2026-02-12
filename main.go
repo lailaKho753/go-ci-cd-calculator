@@ -52,7 +52,7 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, v interface{}) bool {
 func handleOperation(
 	w http.ResponseWriter,
 	r *http.Request,
-	op func(float64, float64) float64,
+	op func(float64, float64) (float64, error),
 ) {
 	var req Request
 
@@ -60,7 +60,13 @@ func handleOperation(
 		return
 	}
 
-	result := op(req.A, req.B)
+	result, err := op(req.A, req.B)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
 
 	writeJSON(w, http.StatusOK, Response{
 		Result: result,
@@ -98,5 +104,8 @@ func main() {
 	http.HandleFunc("/multiply", requirePost(multiplyHandler))
 	http.HandleFunc("/divide", requirePost(divideHandler))
 	http.HandleFunc("/power", requirePost(powerHandler))
-	http.ListenAndServe(":8080", nil)
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+	panic(err)
+}
+
 }

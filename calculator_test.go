@@ -1,48 +1,73 @@
 package main
 
-import "testing"
+import (
+	"testing"
+	"math"
+)
 
 func TestAdd(t *testing.T) {
-	result := Add(5, 3)
-	expected := 8.0
-
-	if result != expected {
-		t.Errorf("expected %f but got %f", expected, result)
+	result, err := Add(5, 3)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
+
+	expected := 8.0
+	if math.Abs(result-expected) > 1e-9 {
+	t.Errorf("expected %f but got %f", expected, result)
+}
 }
 
 func TestSubtract(t *testing.T) {
-	result := Subtract(5, 3)
-	expected := 2.0
-
-	if result != expected {
-		t.Errorf("expected %f but got %f", expected, result)
+	result, err  := Subtract(5, 3)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
+
+	expected := 2.0
+	if math.Abs(result-expected) > 1e-9 {
+	t.Errorf("expected %f but got %f", expected, result)
+}
 }
 
 func TestMultiply(t *testing.T) {
-	result := Multiply(5, 3)
-	expected :=15.0
-
-	if result != expected {
-		t.Errorf("expected %f but got %f", expected, result)
+	result, err  := Multiply(5, 3)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
+
+	expected := 15.0
+	if math.Abs(result-expected) > 1e-9 {
+	t.Errorf("expected %f but got %f", expected, result)
+}
 }
 
 func TestDivide(t *testing.T) {
-	result := Divide(9, 3)
-	expected :=3.0
+	result, err  := Divide(9, 3)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
-	if result != expected {
-		t.Errorf("expected %f but got %f", expected, result)
+	expected := 3.0
+	if math.Abs(result-expected) > 1e-9 {
+	t.Errorf("expected %f but got %f", expected, result)
+}
+}
+
+func TestDivideByZero(t *testing.T) {
+	_, err := Divide(5, 0)
+	if err == nil {
+		t.Errorf("expected error but got nil")
 	}
 }
 
 func TestPower(t *testing.T) {
-	result := Power(5, 3)
-	expected :=125.0
+	result, err  := Power(5, 3)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
-	if result != expected {
+	expected := 125.0
+	if math.Abs(result-expected) > 1e-9 {
 		t.Errorf("expected %f but got %f", expected, result)
 	}
 }
