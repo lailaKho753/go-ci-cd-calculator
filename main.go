@@ -14,64 +14,77 @@ type Response struct {
 	Result float64 `json:"result"`
 }
 
-func addHandler(w http.ResponseWriter, r *http.Request) {
-	var req Request
-	json.NewDecoder(r.Body).Decode(&req)
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
 
-	res := Response{
-		Result: Add(req.A, req.B),
+func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(payload)
+}
+
+func requirePost(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{
+				Error: "method not allowed",
+			})
+			return
+		}
+		next(w, r)
+	}
+}
+
+func decodeJSON(w http.ResponseWriter, r *http.Request, v interface{}) bool {
+	defer r.Body.Close()
+
+	err := json.NewDecoder(r.Body).Decode(v)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{
+			Error: "invalid request body",
+		})
+		return false
+	}
+	return true
+}
+
+func handleOperation(
+	w http.ResponseWriter,
+	r *http.Request,
+	op func(float64, float64) float64,
+) {
+	var req Request
+
+	if !decodeJSON(w, r, &req) {
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	result := op(req.A, req.B)
+
+	writeJSON(w, http.StatusOK, Response{
+		Result: result,
+	})
+}
+
+func addHandler(w http.ResponseWriter, r *http.Request) {
+	handleOperation(w, r, Add)
 }
 
 func subtractHandler(w http.ResponseWriter, r *http.Request) {
-	var req Request
-	json.NewDecoder(r.Body).Decode(&req)
-
-	res := Response{
-		Result: Subtract(req.A, req.B),
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	handleOperation(w, r, Subtract)
 }
 
 func multiplyHandler(w http.ResponseWriter, r *http.Request) {
-	var req Request
-	json.NewDecoder(r.Body).Decode(&req)
-
-	res := Response{
-		Result: Multiply(req.A, req.B),
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	handleOperation(w, r, Multiply)
 }
 
 func divideHandler(w http.ResponseWriter, r *http.Request) {
-	var req Request
-	json.NewDecoder(r.Body).Decode(&req)
-
-	res := Response{
-		Result: Divide(req.A, req.B),
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	handleOperation(w, r, Divide)
 }
 
 func powerHandler(w http.ResponseWriter, r *http.Request) {
-	var req Request
-	json.NewDecoder(r.Body).Decode(&req)
-
-	res := Response{
-		Result: Power(req.A, req.B),
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	handleOperation(w, r, Power)
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
@@ -80,10 +93,10 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/health", healthHandler)
-	http.HandleFunc("/add", addHandler)
-	http.HandleFunc("/subtract", subtractHandler)
-	http.HandleFunc("/multiply", multiplyHandler)
-	http.HandleFunc("/divide", divideHandler)
-	http.HandleFunc("/power", powerHandler)
+	http.HandleFunc("/add", requirePost(addHandler))
+	http.HandleFunc("/subtract", requirePost(subtractHandler))
+	http.HandleFunc("/multiply", requirePost(multiplyHandler))
+	http.HandleFunc("/divide", requirePost(divideHandler))
+	http.HandleFunc("/power", requirePost(powerHandler))
 	http.ListenAndServe(":8080", nil)
 }
